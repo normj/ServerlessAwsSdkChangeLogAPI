@@ -5,20 +5,23 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Text;
 using System.IO;
+using FluentValidation.Validators;
 using Newtonsoft.Json.Linq;
 
 namespace ServerlessCarterExample.Services
 {
     public interface IAwsSdkChangeLogService
     {
+        Task<string> GetListOfServicesAsync();
         Task<string> GetLatestReleaseAsync();
 
-        Task<string> GetServiceAsync(string serviceName, int maxEntries = 10);
+        Task<string> GetServiceAsync(string serviceName);
     }
 
 
     public class AwsSdkChangeLogService : IAwsSdkChangeLogService
     {
+        private const string UNKNOWN_PLACE_HOLDER = "unknown";
         const string CHANGE_LOG_URL = "https://raw.githubusercontent.com/aws/aws-sdk-net/master/SDK.CHANGELOG.md";
         const int REFRESH_INTERVAL_IN_MINUTES = 5;
 
@@ -45,11 +48,33 @@ namespace ServerlessCarterExample.Services
             return sb.ToString();
         }
 
-        public async Task<string> GetServiceAsync(string serviceName, int maxEntries = 10)
+        public async Task<string> GetListOfServicesAsync()
+        {
+            var setOfServices = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach(var release in EnumerableReleases(await GetChangeLogTextAsync()))
+            {
+                foreach (var service in release.Services.Keys)
+                {
+                    if (!setOfServices.Contains(service))
+                    {
+                        setOfServices.Add(service.ToLower());
+                    }
+                }
+            }
+
+            var sb = new StringBuilder();
+            foreach (var service in setOfServices.OrderBy(x => x))
+            {
+                sb.AppendLine(service);
+            }
+
+            return sb.ToString();
+        }
+
+        public async Task<string> GetServiceAsync(string serviceName)
         {
             var sb = new StringBuilder();
 
-            var foundServiceEntries = 0;
             foreach(var release in EnumerableReleases(await GetChangeLogTextAsync()))
             {
                 
@@ -58,12 +83,8 @@ namespace ServerlessCarterExample.Services
                     if (sb.Length > 0)
                         sb.AppendLine();
 
-                    sb.AppendLine($"Version {service.Version} released {release.Date}");
+                    sb.AppendLine($"Version {service.Version} released {release.Date.ToShortDateString()}");
                     sb.AppendLine(service.Features.ToString());
-
-                    foundServiceEntries++;
-                    if (foundServiceEntries == maxEntries)
-                        break;
                 }
             }
 
@@ -77,9 +98,14 @@ namespace ServerlessCarterExample.Services
             {
                 int startPos = line.IndexOf("(");
                 int endPos = line.IndexOf(")");
+                if (startPos == -1 || endPos == -1 || endPos < startPos)
+                    return DateTime.MinValue;
                 string strDate = line.Substring(startPos + 1, endPos - startPos - 1);
 
-
+                // Chop off the time component
+                if (strDate.Length > 10)
+                    strDate = strDate.Substring(0, 10);
+                
                 if (DateTime.TryParse(strDate, out var date))
                     return date;
 
@@ -90,7 +116,7 @@ namespace ServerlessCarterExample.Services
             {
                 var tokens = line.Substring(1).Trim().Split(' ');
                 if (tokens.Length != 2)
-                    return ("Unknown", "0.0.0.0");
+                    return (UNKNOWN_PLACE_HOLDER, "0.0.0.0");
 
 
                 string name = tokens[0];
@@ -107,7 +133,7 @@ namespace ServerlessCarterExample.Services
             {
                 if(line.StartsWith("###"))
                 {
-                    if(currentReleaseEntry != null)
+                    if(currentReleaseEntry != null && currentReleaseEntry.Services.Count > 0)
                     {
                         yield return currentReleaseEntry;
                     }
@@ -130,7 +156,11 @@ namespace ServerlessCarterExample.Services
                         Name = info.name,
                         Version = info.version
                     };
-                    currentReleaseEntry.Services[currentServiceEntry.Name] = currentServiceEntry;
+
+                    if (!string.Equals(UNKNOWN_PLACE_HOLDER, currentServiceEntry.Name))
+                    {
+                        currentReleaseEntry.Services[currentServiceEntry.Name] = currentServiceEntry;
+                    }
                 }
                 else if(currentServiceEntry != null && line.Trim().StartsWith("*"))
                 {

@@ -13,14 +13,14 @@ namespace ServerlessCarterExample.Features
     {
         public AwsSdkChangeLogModule(IAwsSdkChangeLogService awsSdkChangeLogService)
         {
-            this.Get("/awssdk", async (req, res) => 
+            this.Get("/", async (req, res) => 
             {
-                var content = await awsSdkChangeLogService.GetLatestReleaseAsync();
+                var content = await awsSdkChangeLogService.GetListOfServicesAsync();
                 res.StatusCode = 200;                
                 await res.WriteAsync(content);                
             });
 
-            this.Get("/awssdk/{service}", async (ctx) =>
+            this.Get("/{service}", async (ctx) =>
             {
                 var service = ctx.Request.RouteValues.As<string>("service");
                 if(string.IsNullOrEmpty(service))
