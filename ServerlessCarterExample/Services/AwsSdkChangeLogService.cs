@@ -5,47 +5,33 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Text;
 using System.IO;
-using FluentValidation.Validators;
-using Newtonsoft.Json.Linq;
+using Microsoft.Extensions.Logging;
 
 namespace ServerlessCarterExample.Services
 {
     public interface IAwsSdkChangeLogService
     {
         Task<string> GetListOfServicesAsync();
-        Task<string> GetLatestReleaseAsync();
-
         Task<string> GetServiceAsync(string serviceName);
     }
 
 
     public class AwsSdkChangeLogService : IAwsSdkChangeLogService
     {
-        private const string UNKNOWN_PLACE_HOLDER = "unknown";
-        const string CHANGE_LOG_URL = "https://raw.githubusercontent.com/aws/aws-sdk-net/master/SDK.CHANGELOG.md";
-        const int REFRESH_INTERVAL_IN_MINUTES = 5;
+        const string UnknownPlaceHolder = "unknown";
+        const string ChangeLogUrl = "https://raw.githubusercontent.com/aws/aws-sdk-net/master/SDK.CHANGELOG.md";
+        const int RefreshIntervalInMinutes = 5;
 
-        HttpClient _httpClient;
+        readonly HttpClient _httpClient;
         static DateTime _nextFetchTime;
         static string _changeLogContent;
 
-        public AwsSdkChangeLogService(HttpClient httpClient)
+        private ILogger<AwsSdkChangeLogService> _logger;
+
+        public AwsSdkChangeLogService(ILogger<AwsSdkChangeLogService> logger, HttpClient httpClient)
         {
+            _logger = logger;
             _httpClient = httpClient;
-        }
-
-        public async Task<string> GetLatestReleaseAsync()
-        {
-            var sb = new StringBuilder();
-            using var reader = new StringReader(await GetChangeLogTextAsync());
-
-            string line;
-            while(!string.IsNullOrEmpty((line = reader.ReadLine())))
-            {
-                sb.AppendLine(line);
-            }
-
-            return sb.ToString();
         }
 
         public async Task<string> GetListOfServicesAsync()
@@ -94,35 +80,45 @@ namespace ServerlessCarterExample.Services
         
         IEnumerable<ReleaseEntry> EnumerableReleases(string changeLog)
         {
-            Func<string, DateTime> extractDateFromLine = (line) =>
+            DateTime ExtractDateFromLine(string line)
             {
-                int startPos = line.IndexOf("(");
-                int endPos = line.IndexOf(")");
+                var startPos = line.IndexOf("(");
+                var endPos = line.IndexOf(")");
                 if (startPos == -1 || endPos == -1 || endPos < startPos)
+                {
+                    _logger.LogWarning($"Failed to parse date from line: \"{line}\"");
                     return DateTime.MinValue;
-                string strDate = line.Substring(startPos + 1, endPos - startPos - 1);
+                }
+
+                var strDate = line.Substring(startPos + 1, endPos - startPos - 1);
 
                 // Chop off the time component
-                if (strDate.Length > 10)
+                if (strDate.Length > 10) 
                     strDate = strDate.Substring(0, 10);
+
+                if (!DateTime.TryParse(strDate, out var date))
+                {
+                    _logger.LogWarning($"Failed to parse date from line: \"{line}\"");
+                    return DateTime.MinValue;
+                }
                 
-                if (DateTime.TryParse(strDate, out var date))
-                    return date;
+                return date;
+            }
 
-                return DateTime.MinValue;
-            };
-
-            Func<string, (string name, string version)> extractServiceInformation = (line) =>
+            (string name, string version) ExtractServiceInformation(string line)
             {
                 var tokens = line.Substring(1).Trim().Split(' ');
                 if (tokens.Length != 2)
-                    return (UNKNOWN_PLACE_HOLDER, "0.0.0.0");
+                {
+                    _logger.LogWarning($"Failed to extract version from line: {line}");
+                    return (UnknownPlaceHolder, "0.0.0.0");
+                }
 
 
-                string name = tokens[0];
-                string version = tokens[1].Replace("(", "").Replace(")", "");
+                var name = tokens[0];
+                var version = tokens[1].Replace("(", "").Replace(")", "");
                 return (name, version);
-            };
+            }
 
             using var reader = new StringReader(changeLog);
 
@@ -140,7 +136,7 @@ namespace ServerlessCarterExample.Services
 
                     currentReleaseEntry = new ReleaseEntry
                     {
-                        Date = extractDateFromLine(line)
+                        Date = ExtractDateFromLine(line)
                     };
                 }
                 // Empty space at the start of the document
@@ -150,14 +146,14 @@ namespace ServerlessCarterExample.Services
                 }
                 else if(line.StartsWith("* "))
                 {
-                    var info = extractServiceInformation(line);
+                    var info = ExtractServiceInformation(line);
                     currentServiceEntry = new ServiceEntry
                     {
                         Name = info.name,
                         Version = info.version
                     };
 
-                    if (!string.Equals(UNKNOWN_PLACE_HOLDER, currentServiceEntry.Name))
+                    if (!string.Equals(UnknownPlaceHolder, currentServiceEntry.Name))
                     {
                         currentReleaseEntry.Services[currentServiceEntry.Name] = currentServiceEntry;
                     }
@@ -174,8 +170,9 @@ namespace ServerlessCarterExample.Services
         {
             if(_changeLogContent == null || _nextFetchTime < DateTime.Now)
             {
-                _changeLogContent = await _httpClient.GetStringAsync(CHANGE_LOG_URL);
-                _nextFetchTime = DateTime.Now.AddMinutes(REFRESH_INTERVAL_IN_MINUTES);
+                _changeLogContent = await _httpClient.GetStringAsync(ChangeLogUrl);
+                _nextFetchTime = DateTime.Now.AddMinutes(RefreshIntervalInMinutes);
+                _logger.LogInformation($"Fetched changed log from GitHub repo. Next refresh will be {_nextFetchTime}");
             }
 
             return _changeLogContent;
