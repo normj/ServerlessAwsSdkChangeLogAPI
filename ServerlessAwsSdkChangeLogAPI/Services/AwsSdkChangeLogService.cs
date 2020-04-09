@@ -7,7 +7,7 @@ using System.Text;
 using System.IO;
 using Microsoft.Extensions.Logging;
 
-namespace ServerlessCarterExample.Services
+namespace ServerlessAwsSdkChangeLogAPI.Services
 {
     public interface IAwsSdkChangeLogService
     {

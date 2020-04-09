@@ -6,13 +6,13 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
 using System.IO;
 
-namespace ServerlessCarterExample
+namespace ServerlessAwsSdkChangeLogAPI
 {
     /// <summary>
     /// This class extends from APIGatewayProxyFunction which contains the method FunctionHandlerAsync which is the 
     /// actual Lambda function entry point. The Lambda handler field should be set to
     /// 
-    /// ServerlessCarterExample::ServerlessCarterExample.LambdaEntryPoint::FunctionHandlerAsync
+    /// ServerlessAwsSdkChangeLogAPI::ServerlessAwsSdkChangeLogAPI.LambdaEntryPoint::FunctionHandlerAsync
     /// </summary>
     public class LambdaEntryPoint :
 

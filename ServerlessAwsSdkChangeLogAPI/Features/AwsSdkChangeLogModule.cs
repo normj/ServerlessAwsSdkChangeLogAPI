@@ -6,9 +6,9 @@ using Carter;
 using Carter.Request;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
-using ServerlessCarterExample.Services;
+using ServerlessAwsSdkChangeLogAPI.Services;
 
-namespace ServerlessCarterExample.Features
+namespace ServerlessAwsSdkChangeLogAPI.Features
 {
     public class AwsSdkChangeLogModule : CarterModule
     {

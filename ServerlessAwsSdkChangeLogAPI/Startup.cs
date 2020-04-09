@@ -12,9 +12,9 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Carter;
 
-using ServerlessCarterExample.Services;
+using ServerlessAwsSdkChangeLogAPI.Services;
 
-namespace ServerlessCarterExample
+namespace ServerlessAwsSdkChangeLogAPI
 {
     public class Startup
     {

@@ -9,7 +9,7 @@
     "AspNetCoreFunction": {
       "Type": "AWS::Serverless::Function",
       "Properties": {
-        "Handler": "ServerlessCarterExample::ServerlessCarterExample.LambdaEntryPoint::FunctionHandlerAsync",
+        "Handler": "ServerlessAwsSdkChangeLogAPI::ServerlessAwsSdkChangeLogAPI.LambdaEntryPoint::FunctionHandlerAsync",
         "Runtime": "dotnetcore3.1",
         "CodeUri": "",
         "MemorySize": 256,
