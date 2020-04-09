@@ -80,46 +80,6 @@ namespace ServerlessAwsSdkChangeLogAPI.Services
         
         IEnumerable<ReleaseEntry> EnumerableReleases(string changeLog)
         {
-            DateTime ExtractDateFromLine(string line)
-            {
-                var startPos = line.IndexOf("(");
-                var endPos = line.IndexOf(")");
-                if (startPos == -1 || endPos == -1 || endPos < startPos)
-                {
-                    _logger.LogWarning($"Failed to parse date from line: \"{line}\"");
-                    return DateTime.MinValue;
-                }
-
-                var strDate = line.Substring(startPos + 1, endPos - startPos - 1);
-
-                // Chop off the time component
-                if (strDate.Length > 10) 
-                    strDate = strDate.Substring(0, 10);
-
-                if (!DateTime.TryParse(strDate, out var date))
-                {
-                    _logger.LogWarning($"Failed to parse date from line: \"{line}\"");
-                    return DateTime.MinValue;
-                }
-                
-                return date;
-            }
-
-            (string name, string version) ExtractServiceInformation(string line)
-            {
-                var tokens = line.Substring(1).Trim().Split(' ');
-                if (tokens.Length != 2)
-                {
-                    _logger.LogWarning($"Failed to extract version from line: {line}");
-                    return (UnknownPlaceHolder, "0.0.0.0");
-                }
-
-
-                var name = tokens[0];
-                var version = tokens[1].Replace("(", "").Replace(")", "");
-                return (name, version);
-            }
-
             using var reader = new StringReader(changeLog);
 
             ReleaseEntry currentReleaseEntry = null;
@@ -177,6 +137,63 @@ namespace ServerlessAwsSdkChangeLogAPI.Services
 
             return _changeLogContent;
         }
+        
+        
+        public DateTime ExtractDateFromLine(string line)
+        {
+            var startPos = line.IndexOf("(");
+            var endPos = line.IndexOf(")");
+            if (startPos == -1 || endPos == -1 || endPos < startPos)
+            {
+                _logger.LogWarning($"Failed to parse date from line: \"{line}\"");
+                return DateTime.MinValue;
+            }
+
+            var strDate = line.Substring(startPos + 1, endPos - startPos - 1);
+
+            // Chop off the time component
+            if (strDate.Length > 10) 
+                strDate = strDate.Substring(0, 10);
+
+            if (!DateTime.TryParse(strDate, out var date))
+            {
+                _logger.LogWarning($"Failed to parse date from line: \"{line}\"");
+                return DateTime.MinValue;
+            }
+                
+            return date;
+        }
+
+        public (string name, string version) ExtractServiceInformation(string line)
+        {
+            if (line.StartsWith("* Core ") && !line.Contains('(') )
+            {
+                var tokens = line.Substring(2).Split(' ');
+                if (tokens.Length != 2)
+                {
+                    return (UnknownPlaceHolder, "0.0.0.0");
+                }
+                
+                return (tokens[0], tokens[1]);
+            }
+            
+            int openParenPos = line.LastIndexOf('(');
+            int closeParenPos = line.LastIndexOf(')');
+            
+            if(openParenPos == -1 || closeParenPos == -1 || closeParenPos < openParenPos)
+            {
+                return (UnknownPlaceHolder, "0.0.0.0");
+            }
+
+            var version = line.Substring(openParenPos + 1, closeParenPos - openParenPos - 1);
+            var name = line.Substring(0, openParenPos - 1).Trim();
+            if (name.StartsWith("* "))
+            {
+                name = name.Substring(2);
+            }
+            
+            return (name, version);
+        }        
 
 
         class ReleaseEntry
