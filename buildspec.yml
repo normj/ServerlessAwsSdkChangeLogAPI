@@ -1,0 +1,20 @@
+version: 0.2
+
+env:
+    variables:
+        S3_BUCKET: ""
+phases:
+  install:
+    runtime-versions:
+        dotnet: 3.1    
+    commands:
+      - apt-get update && apt-get install -y zip
+      - dotnet tool install -g Amazon.Lambda.Tools
+  build:
+    commands:
+      - cd ./ServerlessAwsSdkChangeLogAPI
+      - /root/.dotnet/tools/dotnet-lambda package-ci --config-file codebuild-defaults.json --serverless-template serverless.template --output-template updated.template --s3-bucket $S3_BUCKET
+artifacts:
+  files:
+    - ./ServerlessAwsSdkChangeLogAPI/updated.template
+  discard-paths: yes
