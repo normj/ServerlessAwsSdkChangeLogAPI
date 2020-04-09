@@ -24,7 +24,7 @@ phases:
       commands:
         - ~/.dotnet/tools/trx2junit ./testresults/*
 reports:
-  ServerlessAwsSdkChangeLogAPI-UnitTests:
+  UnitTests:
     files:
       - '**/*'
     base-directory: './testresults'         
