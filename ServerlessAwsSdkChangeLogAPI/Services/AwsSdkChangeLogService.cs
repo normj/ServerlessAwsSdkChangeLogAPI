@@ -145,7 +145,7 @@ namespace ServerlessAwsSdkChangeLogAPI.Services
             var endPos = line.IndexOf(")");
             if (startPos == -1 || endPos == -1 || endPos < startPos)
             {
-                _logger.LogWarning($"Failed to parse date from line: \"{line}\"");
+                _logger?.LogWarning($"Failed to parse date from line: \"{line}\"");
                 return DateTime.MinValue;
             }
 
@@ -157,7 +157,7 @@ namespace ServerlessAwsSdkChangeLogAPI.Services
 
             if (!DateTime.TryParse(strDate, out var date))
             {
-                _logger.LogWarning($"Failed to parse date from line: \"{line}\"");
+                _logger?.LogWarning($"Failed to parse date from line: \"{line}\"");
                 return DateTime.MinValue;
             }
                 

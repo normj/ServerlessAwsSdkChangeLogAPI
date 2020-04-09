@@ -21,5 +21,25 @@ namespace ServerlessAwsSdkChangeLogAPI.UnitTests
             Assert.Equal(expectedName, info.name);
             Assert.Equal(expectVersion, info.version);
         }
+
+        [Theory]
+        [InlineData("### 3.3.717.0 (2020-04-07 18:10 UTC)", 2020, 4, 7)]
+        [InlineData("### 3.3.717.0 2020-04-07 18:10 UTC", -1, -1, -1)]
+        public void ExtractDateTest(string line, int year, int month, int day)
+        {
+            var service = new AwsSdkChangeLogService(null, null);
+            var actualDate = service.ExtractDateFromLine(line);
+
+            if (year == -1)
+            {
+                Assert.Equal(DateTime.MinValue, actualDate);                
+            }
+            else
+            {
+                Assert.Equal(year, actualDate.Year);
+                Assert.Equal(month, actualDate.Month);
+                Assert.Equal(day, actualDate.Day);
+            }
+        }
     }
 }
