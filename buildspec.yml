@@ -10,7 +10,7 @@ phases:
     commands:
       - dotnet tool install -g trx2junit
       - dotnet tool install -g Amazon.Lambda.Tools
-  pre-build:
+  pre_build:
     commands:
       - cd ./ServerlessAwsSdkChangeLogAPI.UnitTests
       - dotnet test -c Release  --logger trx --results-directory ../testresults
