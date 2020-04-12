@@ -57,18 +57,23 @@ namespace ServerlessAwsSdkChangeLogAPI.Features
             });
         }
 
-        private (string ResponseContentType, ResponseWriterType WriterType) DetermineResponseType(string acceptedContentType)
+        public static (string ResponseContentType, ResponseWriterType WriterType) DetermineResponseType(string acceptedContentType)
         {
+            
             if (!string.IsNullOrEmpty(acceptedContentType))
             {
-                if(string.Equals("text/plain", acceptedContentType, StringComparison.OrdinalIgnoreCase))
+                foreach (var token in acceptedContentType.Split(','))
                 {
-                    return ("text/plain", ResponseWriterType.Text);
+                    var tokenContentType = token.Trim();
+                    if(string.Equals("text/plain", tokenContentType, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return ("text/plain", ResponseWriterType.Text);
+                    }
+                    else if(string.Equals("application/json", tokenContentType, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return ("application/json", ResponseWriterType.Json);
+                    }
                 }
-                else if(string.Equals("application/json", acceptedContentType, StringComparison.OrdinalIgnoreCase))
-                {
-                    return ("application/json", ResponseWriterType.Json);
-                } 
             }            
             
             return ("text/plain", ResponseWriterType.Text);
