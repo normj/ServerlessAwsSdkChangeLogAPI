@@ -13,7 +13,8 @@ namespace ServerlessAwsSdkChangeLogAPI.UnitTests
         [InlineData("* FailCase (", "unknown", "0.0.0.0")]
         [InlineData("* FailCase )(", "unknown", "0.0.0.0")]
         [InlineData("* FailCase )", "unknown", "0.0.0.0")]
-        [InlineData("* Application Auto Scaling (3.1.0.0)", "Application Auto Scaling", "3.1.0.0")]
+        [InlineData("* Application Auto Scaling (3.1.0.0)", "unknown", "0.0.0.0")]
+        [InlineData("* [GARelease](aaa) (3.1.0.0)", "unknown", "0.0.0.0")]
         public void ExtractServiceInformationTest(string line, string expectedName, string expectVersion)
         {
             var service = new AwsSdkChangeLogService(null, null);

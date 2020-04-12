@@ -19,25 +19,21 @@ namespace ServerlessAwsSdkChangeLogAPI.Services
     public class AwsSdkChangeLogService : IAwsSdkChangeLogService
     {
         const string UnknownPlaceHolder = "unknown";
-        const string ChangeLogUrl = "https://raw.githubusercontent.com/aws/aws-sdk-net/master/SDK.CHANGELOG.md";
-        const int RefreshIntervalInMinutes = 5;
 
-        readonly HttpClient _httpClient;
-        static DateTime _nextFetchTime;
-        static string _changeLogContent;
+        readonly IAwsSdkChangeLogFetcherService _logFetcher;
 
-        private ILogger<AwsSdkChangeLogService> _logger;
+        private readonly ILogger<AwsSdkChangeLogService> _logger;
 
-        public AwsSdkChangeLogService(ILogger<AwsSdkChangeLogService> logger, HttpClient httpClient)
+        public AwsSdkChangeLogService(ILogger<AwsSdkChangeLogService> logger, IAwsSdkChangeLogFetcherService logFetcher)
         {
             _logger = logger;
-            _httpClient = httpClient;
+            _logFetcher = logFetcher;
         }
 
         public async Task<string> GetListOfServicesAsync()
         {
             var setOfServices = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            foreach(var release in EnumerableReleases(await GetChangeLogTextAsync()))
+            foreach(var release in EnumerableReleases(await _logFetcher.GetChangeLogTextAsync()))
             {
                 foreach (var service in release.Services.Keys)
                 {
@@ -61,7 +57,7 @@ namespace ServerlessAwsSdkChangeLogAPI.Services
         {
             var sb = new StringBuilder();
 
-            foreach(var release in EnumerableReleases(await GetChangeLogTextAsync()))
+            foreach(var release in EnumerableReleases(await _logFetcher.GetChangeLogTextAsync()))
             {
                 
                 if(release.Services.TryGetValue(serviceName, out var service))
@@ -126,19 +122,6 @@ namespace ServerlessAwsSdkChangeLogAPI.Services
         }
 
 
-        private async Task<string> GetChangeLogTextAsync()
-        {
-            if(_changeLogContent == null || _nextFetchTime < DateTime.Now)
-            {
-                _changeLogContent = await _httpClient.GetStringAsync(ChangeLogUrl);
-                _nextFetchTime = DateTime.Now.AddMinutes(RefreshIntervalInMinutes);
-                _logger.LogInformation($"Fetched changed log from GitHub repo. Next refresh will be {_nextFetchTime}");
-            }
-
-            return _changeLogContent;
-        }
-        
-        
         public DateTime ExtractDateFromLine(string line)
         {
             var startPos = line.IndexOf("(");
@@ -190,6 +173,11 @@ namespace ServerlessAwsSdkChangeLogAPI.Services
             if (name.StartsWith("* "))
             {
                 name = name.Substring(2);
+            }
+
+            if (!char.IsLetter(name[0]) || name.Contains(' '))
+            {
+                return (UnknownPlaceHolder, "0.0.0.0");
             }
             
             return (name, version);
