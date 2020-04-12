@@ -17,7 +17,7 @@ namespace ServerlessAwsSdkChangeLogAPI.UnitTests
         [InlineData("* [GARelease](aaa) (3.1.0.0)", "unknown", "0.0.0.0")]
         public void ExtractServiceInformationTest(string line, string expectedName, string expectVersion)
         {
-            var service = new AwsSdkChangeLogService(null, null);
+            var service = new AwsSdkChangeLogService(null, null, new ResponseWriterFactory());
             var info = service.ExtractServiceInformation(line);
             Assert.Equal(expectedName, info.name);
             Assert.Equal(expectVersion, info.version);
@@ -28,7 +28,7 @@ namespace ServerlessAwsSdkChangeLogAPI.UnitTests
         [InlineData("### 3.3.717.0 2020-04-07 18:10 UTC", -1, -1, -1)]
         public void ExtractDateTest(string line, int year, int month, int day)
         {
-            var service = new AwsSdkChangeLogService(null, null);
+            var service = new AwsSdkChangeLogService(null, null, new ResponseWriterFactory());
             var actualDate = service.ExtractDateFromLine(line);
 
             if (year == -1)

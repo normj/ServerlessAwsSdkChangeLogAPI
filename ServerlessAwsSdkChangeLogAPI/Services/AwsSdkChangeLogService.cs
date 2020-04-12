@@ -1,18 +1,20 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.Design.Serialization;
 using System.Net.Http;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Text;
 using System.IO;
 using Microsoft.Extensions.Logging;
+using ServerlessAwsSdkChangeLogAPI.Writers;
 
 namespace ServerlessAwsSdkChangeLogAPI.Services
 {
     public interface IAwsSdkChangeLogService
     {
-        Task<string> GetListOfServicesAsync();
-        Task<string> GetServiceAsync(string serviceName);
+        Task<string> GetListOfServicesAsync(ResponseWriterType writerType);
+        Task<string> GetServiceAsync(string serviceName, ResponseWriterType writerType);
     }
 
 
@@ -23,14 +25,16 @@ namespace ServerlessAwsSdkChangeLogAPI.Services
         readonly IAwsSdkChangeLogFetcherService _logFetcher;
 
         private readonly ILogger<AwsSdkChangeLogService> _logger;
+        private readonly IResponseWriterFactory _responseWriter;
 
-        public AwsSdkChangeLogService(ILogger<AwsSdkChangeLogService> logger, IAwsSdkChangeLogFetcherService logFetcher)
+        public AwsSdkChangeLogService(ILogger<AwsSdkChangeLogService> logger, IAwsSdkChangeLogFetcherService logFetcher, IResponseWriterFactory responseWriter)
         {
             _logger = logger;
             _logFetcher = logFetcher;
+            _responseWriter = responseWriter;
         }
 
-        public async Task<string> GetListOfServicesAsync()
+        public async Task<string> GetListOfServicesAsync(ResponseWriterType writerType)
         {
             var setOfServices = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             foreach(var release in EnumerableReleases(await _logFetcher.GetChangeLogTextAsync()))
@@ -44,33 +48,40 @@ namespace ServerlessAwsSdkChangeLogAPI.Services
                 }
             }
 
-            var sb = new StringBuilder();
+            var writer = _responseWriter.GetServiceListWriter(writerType);
+            writer.Start();
             foreach (var service in setOfServices.OrderBy(x => x))
             {
-                sb.AppendLine(service);
+                writer.WriteService(service);
             }
 
-            return sb.ToString();
+            return writer.Finish();
         }
 
-        public async Task<string> GetServiceAsync(string serviceName)
+        public async Task<string> GetServiceAsync(string serviceName, ResponseWriterType writerType)
         {
-            var sb = new StringBuilder();
-
+            var writer = _responseWriter.GetServiceFeatureListWriter(writerType);
+            writer.Start();
+            
             foreach(var release in EnumerableReleases(await _logFetcher.GetChangeLogTextAsync()))
             {
                 
                 if(release.Services.TryGetValue(serviceName, out var service))
                 {
-                    if (sb.Length > 0)
-                        sb.AppendLine();
+                    writer.StartRelease(service.Version, release.Date);
 
-                    sb.AppendLine($"Version {service.Version} released {release.Date.ToShortDateString()}");
-                    sb.AppendLine(service.Features.ToString());
+                    writer.StartFeatures();
+                    foreach (var feature in service.Features)
+                    {
+                        writer.AddFeature(feature);
+                    }
+                    writer.EndFeatures();
+                    
+                    writer.EndRelease();
                 }
             }
 
-            return sb.ToString();
+            return writer.Finish();
         }
 
         
@@ -116,7 +127,8 @@ namespace ServerlessAwsSdkChangeLogAPI.Services
                 }
                 else if(currentServiceEntry != null && line.Trim().StartsWith("*"))
                 {
-                    currentServiceEntry.Features.AppendLine(line.Trim());
+                    int pos = line.IndexOf('*');
+                    currentServiceEntry.Features.Add(line.Substring(pos + 1).Trim());
                 }
             }
         }
@@ -194,7 +206,7 @@ namespace ServerlessAwsSdkChangeLogAPI.Services
         {
             public string Name { get; set; }
             public string Version { get; set; }
-            public StringBuilder Features { get; set; } = new StringBuilder();
+            public IList<string> Features { get; set; } = new List<string>();
         }
 
     }

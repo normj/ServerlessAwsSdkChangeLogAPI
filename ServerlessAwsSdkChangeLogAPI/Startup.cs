@@ -21,6 +21,7 @@ namespace ServerlessAwsSdkChangeLogAPI
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddCarter();
+            services.AddSingleton<IResponseWriterFactory, ResponseWriterFactory>();
             services.AddHttpClient<IAwsSdkChangeLogFetcherService, AwsSdkChangeLogFetcherService>();
             services.AddScoped<IAwsSdkChangeLogService, AwsSdkChangeLogService>();
         }
