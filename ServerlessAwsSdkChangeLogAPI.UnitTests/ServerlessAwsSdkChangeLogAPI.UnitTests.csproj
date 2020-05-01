@@ -14,7 +14,8 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\ServerlessAwsSdkChangeLogAPI\ServerlessAwsSdkChangeLogAPI.csproj" />
+      <ProjectReference Include="..\ServerlessAwsSdkChangeLogAPI.Common\ServerlessAwsSdkChangeLogAPI.Common.csproj" />
+      <ProjectReference Include="..\ServerlessAwsSdkChangeLogAPI.Web\ServerlessAwsSdkChangeLogAPI.Web.csproj" />
     </ItemGroup>
 
 </Project>

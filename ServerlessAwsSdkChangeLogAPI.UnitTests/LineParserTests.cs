@@ -1,6 +1,6 @@
 using System;
+using ServerlessAwsSdkChangeLogAPI.Common.Services;
 using Xunit;
-using ServerlessAwsSdkChangeLogAPI.Services;
 namespace ServerlessAwsSdkChangeLogAPI.UnitTests
 {
     public class LineParserTests

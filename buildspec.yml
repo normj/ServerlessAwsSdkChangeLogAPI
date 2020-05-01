@@ -17,7 +17,6 @@ phases:
       - cd ..
   build:
     commands:
-      - cd ./ServerlessAwsSdkChangeLogAPI
       - /root/.dotnet/tools/dotnet-lambda package-ci --config-file codebuild-defaults.json --serverless-template serverless.template --output-template updated.template --s3-bucket $S3_BUCKET --s3-prefix ServerlessAwsSdkChangeLogAPIPackageCIArtifacts/
       - cd ..
   post_build:
