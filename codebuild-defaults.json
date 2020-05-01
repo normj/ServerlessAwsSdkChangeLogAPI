@@ -1,0 +1,6 @@
+{
+    "s3-prefix": "ServerlessAwsSdkChangeLogAPI-dev/",
+    "template": "serverless.template",
+    "msbuild-parameters": "--self-contained false /p:PublishReadyToRun=true",
+    "framework": "netcoreapp3.1"
+}
