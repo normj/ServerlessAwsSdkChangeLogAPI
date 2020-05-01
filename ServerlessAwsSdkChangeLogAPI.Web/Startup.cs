@@ -40,6 +40,8 @@ namespace ServerlessAwsSdkChangeLogAPI.Web
                 app.UseDeveloperExceptionPage();
             }
 
+            app.UseXRay("ServerlessAwsSdkChangeLogAPI.Web");
+
             app.UseHttpsRedirection();
             app.UseStaticFiles();
 

@@ -15,6 +15,7 @@
         "MemorySize": 256,
         "Timeout": 30,
         "Role": null,
+        "Tracing": "Active",
         "Policies": [
           "AWSLambdaBasicExecutionRole"
         ],
