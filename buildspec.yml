@@ -11,7 +11,6 @@ phases:
       - dotnet tool install -g Amazon.Lambda.Tools
   pre_build:
     commands:
-      - cd ./ServerlessAwsSdkChangeLogAPI.UnitTests
       - dotnet test -c Release ./ServerlessAwsSdkChangeLogAPI.UnitTests/ServerlessAwsSdkChangeLogAPI.UnitTests.csproj  --logger trx --results-directory ./testresults
   build:
     commands:
@@ -24,5 +23,5 @@ reports:
     base-directory: './testresults'         
 artifacts:
   files:
-    - ./ServerlessAwsSdkChangeLogAPI/updated.template
+    - ./updated.template
   discard-paths: yes
