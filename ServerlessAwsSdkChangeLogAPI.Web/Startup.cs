@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 using System.Threading.Tasks;
+using Amazon.XRay.Recorder.Handlers.System.Net;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
@@ -26,9 +28,12 @@ namespace ServerlessAwsSdkChangeLogAPI.Web
         {
             services.AddControllers();
             services.AddRazorPages();
+
+            // Add Http Client for IAwsSdkChangeLogFetcherService and enable X-Ray for the out going HTTP requests
+            services.AddHttpClient<IAwsSdkChangeLogFetcherService, AwsSdkChangeLogFetcherService>()
+                    .ConfigurePrimaryHttpMessageHandler(() => new HttpClientXRayTracingHandler(new HttpClientHandler()));
             
             services.AddSingleton<IResponseWriterFactory, ResponseWriterFactory>();
-            services.AddHttpClient<IAwsSdkChangeLogFetcherService, AwsSdkChangeLogFetcherService>();
             services.AddScoped<IAwsSdkChangeLogService, AwsSdkChangeLogService>();
         }
 

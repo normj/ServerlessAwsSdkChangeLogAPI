@@ -31,6 +31,7 @@ namespace ServerlessAwsSdkChangeLogAPI.Common.Services
         {
             if(_changeLogContent == null || _nextFetchTime < DateTime.Now)
             {
+                
                 _changeLogContent = await _httpClient.GetStringAsync(ChangeLogUrl);
                 _nextFetchTime = DateTime.Now.AddMinutes(RefreshIntervalInMinutes);
                 _logger.LogInformation($"Fetched changed log from GitHub repo. Next refresh will be {_nextFetchTime}");
