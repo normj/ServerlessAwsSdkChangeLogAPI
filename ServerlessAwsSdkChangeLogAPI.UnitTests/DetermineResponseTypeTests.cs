@@ -1,5 +1,5 @@
 using System;
-using ServerlessAwsSdkChangeLogAPI.Common.Services;
+using ServerlessAwsSdkChangeLogAPI.Web.Writers;
 using ServerlessAwsSdkChangeLogAPI.Web.Controllers;
 
 using Xunit;

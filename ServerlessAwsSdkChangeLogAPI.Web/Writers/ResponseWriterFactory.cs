@@ -1,6 +1,6 @@
-using ServerlessAwsSdkChangeLogAPI.Common.Writers;
+using ServerlessAwsSdkChangeLogAPI.Web.Writers;
 
-namespace ServerlessAwsSdkChangeLogAPI.Common.Services
+namespace ServerlessAwsSdkChangeLogAPI.Web.Writers
 {
     public enum ResponseWriterType {Text, Json}
     

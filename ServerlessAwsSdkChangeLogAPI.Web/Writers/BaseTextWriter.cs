@@ -1,6 +1,6 @@
 using System.Text;
 
-namespace ServerlessAwsSdkChangeLogAPI.Common.Writers
+namespace ServerlessAwsSdkChangeLogAPI.Web.Writers
 {
     public abstract class BaseTextWriter
     {

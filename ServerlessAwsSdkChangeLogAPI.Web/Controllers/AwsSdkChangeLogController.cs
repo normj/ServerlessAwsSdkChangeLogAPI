@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using ServerlessAwsSdkChangeLogAPI.Common.Services;
+using ServerlessAwsSdkChangeLogAPI.Web.Writers;
 
 namespace ServerlessAwsSdkChangeLogAPI.Web.Controllers
 {
@@ -11,11 +12,13 @@ namespace ServerlessAwsSdkChangeLogAPI.Web.Controllers
     {
         private readonly IAwsSdkChangeLogService _awsSdkChangeLogService;
         private readonly ILogger<AwsSdkChangeLogController> _logger;
+        private readonly IResponseWriterFactory _responseWriterFactory;
 
-        public AwsSdkChangeLogController(ILogger<AwsSdkChangeLogController> logger, IAwsSdkChangeLogService awsSdkChangeLogService)
+        public AwsSdkChangeLogController(ILogger<AwsSdkChangeLogController> logger, IAwsSdkChangeLogService awsSdkChangeLogService, IResponseWriterFactory responseWriterFactory)
         {
             this._logger = logger;
             this._awsSdkChangeLogService = awsSdkChangeLogService;
+            this._responseWriterFactory = responseWriterFactory;
         }
         
         [HttpGet]
@@ -24,7 +27,15 @@ namespace ServerlessAwsSdkChangeLogAPI.Web.Controllers
             _logger.LogInformation($"Getting the names of all of the services");
             var acceptedContentType = this.HttpContext.Request.Headers["Accept"];
             var (responseContentType, writerType) = DetermineResponseType(acceptedContentType);
-            var content = await this._awsSdkChangeLogService.GetListOfServicesAsync(writerType);
+            var services = await this._awsSdkChangeLogService.GetListOfServicesAsync();
+
+            var writer = _responseWriterFactory.GetServiceListWriter(writerType);
+            writer.Start();
+            foreach(var service in services)
+            {
+                writer.WriteService(service);
+            }
+            var content = writer.Finish();
 
             return Content(content, responseContentType);
         }
@@ -35,7 +46,23 @@ namespace ServerlessAwsSdkChangeLogAPI.Web.Controllers
             _logger.LogInformation($"Getting changes for service {service}");
             var acceptedContentType = this.HttpContext.Request.Headers["Accept"];
             var (responseContentType, writerType) = DetermineResponseType(acceptedContentType);
-            var content = await this._awsSdkChangeLogService.GetServiceAsync(service, writerType);
+            var serviceReleases = await this._awsSdkChangeLogService.GetServiceAsync(service);
+
+            var writer = _responseWriterFactory.GetServiceFeatureListWriter(writerType);
+            writer.Start();
+            foreach(var serviceRelease in serviceReleases)
+            {
+                writer.StartRelease(serviceRelease.Version, serviceRelease.ReleaseDate);
+                writer.StartFeatures();
+                foreach(var feature in serviceRelease.Features)
+                {
+                    writer.AddFeature(feature);
+                }
+                writer.EndFeatures();
+                writer.EndRelease();
+            }
+
+            var content = writer.Finish();
 
             return Content(content, responseContentType);
         }

@@ -11,6 +11,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using ServerlessAwsSdkChangeLogAPI.Common.Services;
+using ServerlessAwsSdkChangeLogAPI.Web.Writers;
 
 namespace ServerlessAwsSdkChangeLogAPI.Web
 {

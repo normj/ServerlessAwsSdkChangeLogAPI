@@ -7,14 +7,13 @@ using System.Threading.Tasks;
 using System.Text;
 using System.IO;
 using Microsoft.Extensions.Logging;
-using ServerlessAwsSdkChangeLogAPI.Common.Writers;
 
 namespace ServerlessAwsSdkChangeLogAPI.Common.Services
 {
     public interface IAwsSdkChangeLogService
     {
-        Task<string> GetListOfServicesAsync(ResponseWriterType writerType);
-        Task<string> GetServiceAsync(string serviceName, ResponseWriterType writerType);
+        Task<IEnumerable<string>> GetListOfServicesAsync();
+        Task<IEnumerable<AwsSdkChangeLogService.ServiceRelease>> GetServiceAsync(string serviceName);
     }
 
 
@@ -25,16 +24,14 @@ namespace ServerlessAwsSdkChangeLogAPI.Common.Services
         readonly IAwsSdkChangeLogFetcherService _logFetcher;
 
         private readonly ILogger<AwsSdkChangeLogService> _logger;
-        private readonly IResponseWriterFactory _responseWriter;
 
-        public AwsSdkChangeLogService(ILogger<AwsSdkChangeLogService> logger, IAwsSdkChangeLogFetcherService logFetcher, IResponseWriterFactory responseWriter)
+        public AwsSdkChangeLogService(ILogger<AwsSdkChangeLogService> logger, IAwsSdkChangeLogFetcherService logFetcher)
         {
             _logger = logger;
             _logFetcher = logFetcher;
-            _responseWriter = responseWriter;
         }
 
-        public async Task<string> GetListOfServicesAsync(ResponseWriterType writerType)
+        public async Task<IEnumerable<string>> GetListOfServicesAsync()
         {
             var setOfServices = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             foreach(var release in EnumerableReleases(await _logFetcher.GetChangeLogTextAsync()))
@@ -48,42 +45,34 @@ namespace ServerlessAwsSdkChangeLogAPI.Common.Services
                 }
             }
 
-            var writer = _responseWriter.GetServiceListWriter(writerType);
-            writer.Start();
-            foreach (var service in setOfServices.OrderBy(x => x))
-            {
-                writer.WriteService(service);
-            }
-
-            return writer.Finish();
+            return setOfServices.OrderBy(x => x);
         }
 
-        public async Task<string> GetServiceAsync(string serviceName, ResponseWriterType writerType)
+        public async Task<IEnumerable<ServiceRelease>> GetServiceAsync(string serviceName)
         {
-            var writer = _responseWriter.GetServiceFeatureListWriter(writerType);
-            writer.Start();
+            var serviceReleases = new List<ServiceRelease>();
             
             foreach(var release in EnumerableReleases(await _logFetcher.GetChangeLogTextAsync()))
             {
                 
                 if(release.Services.TryGetValue(serviceName, out var service))
                 {
-                    writer.StartRelease(service.Version, release.Date);
-
-                    writer.StartFeatures();
+                    var sr = new ServiceRelease
+                    {
+                        Version = service.Version,
+                        ReleaseDate = release.Date
+                    };
                     foreach (var feature in service.Features)
                     {
-                        writer.AddFeature(feature);
+                        sr.Features.Add(feature);
                     }
-                    writer.EndFeatures();
-                    
-                    writer.EndRelease();
+
+                    serviceReleases.Add(sr);
                 }
             }
 
-            return writer.Finish();
+            return serviceReleases;
         }
-
         
         IEnumerable<ReleaseEntry> EnumerableReleases(string changeLog)
         {
@@ -207,6 +196,14 @@ namespace ServerlessAwsSdkChangeLogAPI.Common.Services
             public string Name { get; set; }
             public string Version { get; set; }
             public IList<string> Features { get; set; } = new List<string>();
+        }
+
+
+        public class ServiceRelease
+        {
+            public DateTime ReleaseDate { get; set; }
+            public string Version { get; set; }
+            public IList<string> Features { get; } = new List<string>();
         }
 
     }

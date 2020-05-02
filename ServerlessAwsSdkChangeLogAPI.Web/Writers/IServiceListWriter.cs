@@ -2,7 +2,7 @@ using System.IO;
 using System.Text;
 using System.Text.Json;
 
-namespace ServerlessAwsSdkChangeLogAPI.Common.Writers
+namespace ServerlessAwsSdkChangeLogAPI.Web.Writers
 {
     public interface IServiceListWriter : IWriter
     {

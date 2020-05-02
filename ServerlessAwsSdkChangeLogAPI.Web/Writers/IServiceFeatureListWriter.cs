@@ -1,6 +1,6 @@
 using System;
 
-namespace ServerlessAwsSdkChangeLogAPI.Common.Writers
+namespace ServerlessAwsSdkChangeLogAPI.Web.Writers
 {
     public interface IServiceFeatureListWriter : IWriter
     {

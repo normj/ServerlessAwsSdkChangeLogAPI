@@ -1,4 +1,4 @@
-namespace ServerlessAwsSdkChangeLogAPI.Common.Writers
+namespace ServerlessAwsSdkChangeLogAPI.Web.Writers
 {
     public interface IWriter
     {
