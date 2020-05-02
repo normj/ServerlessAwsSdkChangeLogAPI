@@ -14,6 +14,8 @@ namespace ServerlessAwsSdkChangeLogAPI.Common.Services
     {
         Task<IEnumerable<string>> GetListOfServicesAsync();
         Task<IEnumerable<AwsSdkChangeLogService.ServiceRelease>> GetServiceAsync(string serviceName);
+
+        Task<IEnumerable<AwsSdkChangeLogService.ReleaseEntry>> EnumerableReleases();
     }
 
 
@@ -73,7 +75,14 @@ namespace ServerlessAwsSdkChangeLogAPI.Common.Services
 
             return serviceReleases;
         }
-        
+
+        public async Task<IEnumerable<ReleaseEntry>> EnumerableReleases()
+        {
+            var changeLog = await _logFetcher.GetChangeLogTextAsync();
+            return EnumerableReleases(changeLog);
+        }
+
+
         IEnumerable<ReleaseEntry> EnumerableReleases(string changeLog)
         {
             using var reader = new StringReader(changeLog);
@@ -185,13 +194,13 @@ namespace ServerlessAwsSdkChangeLogAPI.Common.Services
         }        
 
 
-        class ReleaseEntry
+        public class ReleaseEntry
         {
             public DateTime Date { get; set; }
             public IDictionary<string, ServiceEntry> Services { get; set; } = new Dictionary<string, ServiceEntry>(StringComparer.OrdinalIgnoreCase);
         }
 
-        class ServiceEntry
+        public class ServiceEntry
         {
             public string Name { get; set; }
             public string Version { get; set; }

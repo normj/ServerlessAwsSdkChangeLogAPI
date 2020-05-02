@@ -1,10 +1,32 @@
 ﻿@page
 @model IndexModel
 @{
-    ViewData["Title"] = "Home page";
+    ViewData["Title"] = "AWS SDK for .NET Change Log Search";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://docs.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div>
+    <h2 class="display-4">AWS SDK for .NET Change Log</h2>
+    <p>
+        This site is a search tool on top of the AWS SDK for .NET's change log. The change log can be found in the AWS SDK for .NET GitHub repo <a href="https://github.com/aws/aws-sdk-net/blob/master/SDK.CHANGELOG.md">here.</a> 
+    </p>
+    
+    <h4>Last week releases:</h4>
+    @foreach(var release in Model.LastWeekOfReleases)
+    {
+        @release.Date
+        <ul>
+        @foreach(var service in release.Services.Values)
+        {
+            <li>@service.Name (@service.Version)
+                <ul>
+                    @foreach(var feature in service.Features)
+                    {
+                        <li>@feature</li>
+                    }
+                </ul>
+            </li>
+        }
+        </ul>
+    }
+
 </div>
