@@ -10,10 +10,10 @@
         This site is a search tool on top of the AWS SDK for .NET's change log. The change log can be found in the AWS SDK for .NET GitHub repo <a href="https://github.com/aws/aws-sdk-net/blob/master/SDK.CHANGELOG.md">here.</a> 
     </p>
     
-    <h4>Last week releases:</h4>
+    <h4>Last week's releases:</h4>
     @foreach(var release in Model.LastWeekOfReleases)
     {
-        @release.Date
+        @release.Date.ToShortDateString()
         <ul>
         @foreach(var service in release.Services.Values)
         {
